@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,7 @@ from app.models.user import User
 from app.models.research_report import ResearchReport, ReportType
 from app.schemas.report import ReportResponse, ReportListResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["研报"])
 
 
@@ -77,6 +79,34 @@ async def get_report(
     resp = ReportResponse.model_validate(report)
     resp.has_pdf = bool(report.file_path and os.path.exists(report.file_path))
     return resp
+
+
+@router.get("/{report_id}/detail")
+async def get_report_detail(
+    report_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取研报详情（含AI解读）"""
+    result = await db.execute(
+        select(ResearchReport).where(ResearchReport.report_id == report_id)
+    )
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="研报不存在")
+    
+    return {
+        "report_id": report.report_id,
+        "title": report.title,
+        "source": report.source,
+        "report_type": str(report.report_type.value) if report.report_type else "",
+        "related_stock": report.related_stock,
+        "industry": report.industry,
+        "publish_time": str(report.publish_time) if report.publish_time else "",
+        "ai_summary": report.ai_summary,
+        "url": report.url,
+        "has_pdf": bool(report.file_path and os.path.exists(report.file_path)),
+    }
 
 
 @router.get("/{report_id}/download")

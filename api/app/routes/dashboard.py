@@ -156,7 +156,9 @@ async def get_watchlist_dashboard(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取自选股看板汇总"""
+    """获取自选股看板汇总（优化：先批量获取行情，再逐个分析）"""
+    import asyncio
+    
     result = await db.execute(
         select(UserWatchlist).where(UserWatchlist.user_id == current_user.user_id)
     )
@@ -165,30 +167,43 @@ async def get_watchlist_dashboard(
     if not watchlist:
         return {"stocks": [], "message": "暂无自选股"}
     
+    codes = [w.stock_code for w in watchlist]
+    names = {w.stock_code: w.stock_name for w in watchlist}
+    
+    # 批量获取实时行情（一次API调用）
+    quotes = data_provider.get_realtime_quotes_batch(codes)
+    
+    # 并行分析每只股票
+    async def analyze_one(code):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, analyzer.analyze, code, names.get(code, ""))
+    
+    tasks = [analyze_one(c) for c in codes]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
     stocks = []
-    for w in watchlist:
-        try:
-            analysis = analyzer.analyze(w.stock_code, w.stock_name)
+    for i, r in enumerate(results):
+        code = codes[i]
+        if isinstance(r, Exception):
+            q = quotes.get(code)
             stocks.append({
-                "code": w.stock_code,
-                "name": analysis.name or w.stock_name,
-                "score": analysis.overall_score,
-                "signal": analysis.signal,
-                "signal_icon": analysis.signal_icon,
-                "price": analysis.quote.price if analysis.quote else 0,
-                "change_pct": analysis.quote.change_pct if analysis.quote else 0,
-                "conclusion": analysis.core_conclusion,
+                "code": code,
+                "name": names.get(code, ""),
+                "score": 0, "signal": "数据异常", "signal_icon": "⚠️",
+                "price": q.price if q else 0,
+                "change_pct": q.change_pct if q else 0,
+                "conclusion": str(r),
             })
-        except Exception as e:
+        else:
             stocks.append({
-                "code": w.stock_code,
-                "name": w.stock_name,
-                "score": 0,
-                "signal": "数据异常",
-                "signal_icon": "⚠️",
-                "price": 0,
-                "change_pct": 0,
-                "conclusion": str(e),
+                "code": code,
+                "name": r.name or names.get(code, ""),
+                "score": r.overall_score,
+                "signal": r.signal,
+                "signal_icon": r.signal_icon,
+                "price": r.quote.price if r.quote else 0,
+                "change_pct": r.quote.change_pct if r.quote else 0,
+                "conclusion": r.core_conclusion,
             })
     
     return {"stocks": stocks}
