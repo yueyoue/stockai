@@ -1,14 +1,14 @@
 """
 LLM 服务 - 支持多后端
 支持 DeepSeek / 通义千问 / Claude / OpenAI / 本地模型
+配置从 settings.json 读取，支持图形化设置
 """
 import logging
 import httpx
-from typing import Optional, Dict, Any
-from app.core.config import settings
+from typing import Optional
+from app.core.config import settings as env_settings
 
 logger = logging.getLogger(__name__)
-
 
 # 研报分析 Prompt
 REPORT_PROMPT = """你是一位专业的股票分析师。请对以下研报进行客观分析。
@@ -44,69 +44,69 @@ DASHBOARD_PROMPT = """你是一位专业的股票分析师。请根据以下自�
 ⚠️ 免责声明：以上分析仅基于公开信息的客观拆解，不构成任何投资建议。"""
 
 
-# LLM 后端配置
-LLM_BACKENDS = {
-    "deepseek": {
-        "base_url": "https://api.deepseek.com",
-        "default_model": "deepseek-chat",
-    },
-    "qwen": {
-        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "default_model": "qwen-plus",
-    },
-    "openai": {
-        "base_url": "https://api.openai.com",
-        "default_model": "gpt-4o-mini",
-    },
-    "claude": {
-        "base_url": "https://api.anthropic.com",
-        "default_model": "claude-3-5-sonnet-20241022",
-    },
-}
+def _get_settings() -> dict:
+    """从 settings.json 读取配置（每次调用重新读取，支持热更新）"""
+    import json
+    from pathlib import Path
+    
+    config_file = Path("/app/config/settings.json")
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 
 class LLMService:
-    """多后端 LLM 服务"""
-    
-    def __init__(self):
-        self.api_key = settings.LLM_API_KEY
-        self.base_url = settings.LLM_BASE_URL or "https://api.deepseek.com"
-        self.model = settings.LLM_MODEL or "deepseek-chat"
-    
+    """多后端 LLM 服务 - 配置优先从 settings.json 读取"""
+
+    def _get_api_key(self) -> str:
+        s = _get_settings()
+        return s.get("llm_api_key") or env_settings.LLM_API_KEY or ""
+
+    def _get_base_url(self) -> str:
+        s = _get_settings()
+        return s.get("llm_base_url") or env_settings.LLM_BASE_URL or "https://api.deepseek.com"
+
+    def _get_model(self) -> str:
+        s = _get_settings()
+        return s.get("llm_model") or env_settings.LLM_MODEL or "deepseek-chat"
+
     def is_configured(self) -> bool:
-        return bool(self.api_key)
-    
+        return bool(self._get_api_key())
+
     async def analyze_report(self, title: str, content: str, stock_code: str = "", industry: str = "") -> Optional[str]:
-        """分析研报"""
         prompt = f"研报标题：{title}\n关联股票：{stock_code}\n所属行业：{industry}\n\n研报内容：\n{content[:6000]}"
         return await self._call(REPORT_PROMPT, prompt)
-    
+
     async def analyze_news(self, title: str, content: str, stock_code: str = "") -> Optional[str]:
-        """分析资讯影响"""
         prompt = f"资讯标题：{title}\n关联股票：{stock_code}\n\n资讯内容：\n{content[:4000]}"
         return await self._call(NEWS_PROMPT, prompt)
-    
+
     async def generate_dashboard(self, watchlist_info: str) -> Optional[str]:
-        """生成决策看板"""
         return await self._call(DASHBOARD_PROMPT, watchlist_info)
-    
+
     async def chat(self, system_prompt: str, user_message: str) -> Optional[str]:
-        """通用对话"""
         return await self._call(system_prompt, user_message)
-    
+
     async def _call(self, system_prompt: str, user_prompt: str) -> Optional[str]:
-        """调用 LLM API（兼容 OpenAI 格式）"""
-        if not self.api_key:
+        api_key = self._get_api_key()
+        base_url = self._get_base_url()
+        model = self._get_model()
+
+        if not api_key:
             logger.warning("LLM API key not configured")
             return None
-        
-        url = f"{self.base_url}/v1/chat/completions"
+
+        url = f"{base_url}/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -114,7 +114,7 @@ class LLMService:
             "temperature": 0.3,
             "max_tokens": 2000,
         }
-        
+
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.post(url, json=payload, headers=headers)

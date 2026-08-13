@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.database import init_db
-from app.routes import auth, watchlist, reports, news, push, dashboard
+from app.routes import auth, watchlist, reports, news, push, dashboard, settings
 
 
 @asynccontextmanager
@@ -23,8 +23,8 @@ async def _ensure_admin():
     from sqlalchemy import select
     
     async with async_session() as db:
-        result = await db.execute(select(User).where(User.role == UserRole.ADMIN))
-        admin = result.scalar_one_or_none()
+        result = await db.execute(select(User).where(User.role == UserRole.ADMIN).limit(1))
+        admin = result.scalars().first()
         if not admin:
             admin = User(
                 username="admin",
@@ -58,6 +58,7 @@ app.include_router(reports.router, prefix="/api")
 app.include_router(news.router, prefix="/api")
 app.include_router(push.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 
 @app.get("/api/health")
