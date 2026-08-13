@@ -17,7 +17,7 @@ const routes = [
       {
         path: '',
         name: 'Dashboard',
-        component: () => import('../views/Dashboard.vue'),
+        component: () => import('../views/MarketDashboard.vue'),
       },
       {
         path: '/reports',
@@ -33,6 +33,11 @@ const routes = [
         path: '/watchlist',
         name: 'Watchlist',
         component: () => import('../views/Watchlist.vue'),
+      },
+      {
+        path: '/stock/:code',
+        name: 'StockDetail',
+        component: () => import('../views/StockDetail.vue'),
       },
       {
         path: '/push',

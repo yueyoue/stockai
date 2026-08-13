@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.database import init_db
-from app.routes import auth, watchlist, reports, news, push
+from app.routes import auth, watchlist, reports, news, push, dashboard
 
 
 @asynccontextmanager
@@ -57,6 +57,7 @@ app.include_router(watchlist.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(news.router, prefix="/api")
 app.include_router(push.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
 
 
 @app.get("/api/health")

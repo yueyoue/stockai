@@ -16,3 +16,7 @@ lxml==5.2.2
 pdfplumber==0.11.1
 aiofiles==23.2.1
 python-dotenv==1.0.1
+efinance>=0.5.5
+akshare>=1.12.0
+numpy>=1.24.0
+pandas>=2.0.0
