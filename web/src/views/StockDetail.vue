@@ -206,6 +206,49 @@
       </div>
     </el-card>
 
+    <!-- 舆情情报板块 -->
+    <el-card class="mt-4" v-if="dashboard.related_news?.length">
+      <template #header><span class="font-semibold">📰 舆情情报板块</span></template>
+      
+      <!-- 市场情绪总结 -->
+      <div class="mb-4 p-3 rounded-lg" :class="dashboard.sentiment === '看多' ? 'bg-red-50' : dashboard.sentiment === '看空' ? 'bg-green-50' : 'bg-gray-50'">
+        <div class="font-medium mb-1">📊 市场整体情绪</div>
+        <div class="text-sm">综合技术面分析，当前情绪偏<span class="font-bold">{{ dashboard.sentiment }}</span>。{{ dashboard.conclusion }}</div>
+      </div>
+      
+      <!-- 利好催化 -->
+      <div class="mb-4">
+        <div class="font-medium mb-2 text-red-600">🟢 利好催化清单</div>
+        <div v-for="n in positiveNews" :key="n.news_id" class="py-2 pl-3 border-l-2 border-red-300 mb-2">
+          <div class="text-sm">{{ n.title }}</div>
+          <div class="text-xs text-gray-400">{{ n.source }} · {{ n.publish_time }}</div>
+        </div>
+        <div v-if="!positiveNews.length" class="text-sm text-gray-400">暂无明显利好催化</div>
+      </div>
+      
+      <!-- 风险警报 -->
+      <div class="mb-4">
+        <div class="font-medium mb-2 text-green-600">🔴 风险警报清单</div>
+        <div v-for="n in negativeNews" :key="n.news_id" class="py-2 pl-3 border-l-2 border-green-300 mb-2">
+          <div class="text-sm">{{ n.title }}</div>
+          <div class="text-xs text-gray-400">{{ n.source }} · {{ n.publish_time }}</div>
+        </div>
+        <div v-if="!negativeNews.length" class="text-sm text-gray-400">暂无明显风险警报</div>
+      </div>
+      
+      <!-- 最新动态 -->
+      <div>
+        <div class="font-medium mb-2">📢 最新动态汇总</div>
+        <div v-for="n in dashboard.related_news" :key="n.news_id" class="py-2 border-b last:border-0">
+          <div class="flex items-start justify-between">
+            <span class="text-sm">{{ n.title }}</span>
+            <el-tag v-if="n.sentiment" size="small" :type="getSentimentType(n.sentiment)">{{ n.sentiment }}</el-tag>
+          </div>
+          <div class="text-xs text-gray-400 mt-1">{{ n.source }} · {{ n.publish_time }}</div>
+        </div>
+      </div>
+    </el-card>
+
     <!-- 关联研报 -->
     <el-card class="mt-4" v-if="dashboard.related_reports?.length">
       <template #header><span class="font-semibold">📄 关联研报</span></template>
@@ -262,6 +305,14 @@ const biasRiskColor = computed(() => {
   if (r === '安全') return 'text-green-600'
   if (r === '警戒') return 'text-yellow-600'
   return 'text-red-600'
+})
+
+const positiveNews = computed(() => {
+  return (dashboard.value.related_news || []).filter(n => n.sentiment === '利好')
+})
+
+const negativeNews = computed(() => {
+  return (dashboard.value.related_news || []).filter(n => n.sentiment === '利空')
 })
 
 onMounted(() => fetchDashboard())
