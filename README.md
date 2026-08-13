@@ -40,18 +40,35 @@
 - 支持**拼音首字母**搜索（如 `GZMT`）
 - 下拉列表实时匹配，点击直接添加
 
-### 📰 数据采集
+### 📰 数据采集与资讯
 
-- 全网卖方研报采集，支持分类筛选、标题检索
-- 重点行情资讯、上市公司公告采集
-- 自动关联个股、打分类标签
+- 全网卖方研报采集（东方财富研报频道）
+- 行情资讯、上市公司公告采集
+- **多引擎全网搜索**：博查 / Tavily / Brave / SearXNG
+- 文章全文自动抓取（bs4 解析）
 - 增量采集，定时轮询
+
+### 📄 研报/资讯详情页
+
+- 研报详情：AI 解读全文展示
+- 资讯详情：正文内容 + AI 影响解读
+- 点击即可查看全文，移动端全屏适配
 
 ### 👥 多用户系统
 
 - 注册/登录、密码修改
 - 管理员可控制注册开关、禁用/启用用户
 - 数据完全隔离，用户仅可见自己的数据
+- **图形化管理后台**（4个标签页）
+
+### ⚙️ 图形化系统设置
+
+| 标签页 | 功能 |
+|--------|------|
+| 🤖 AI 模型 | API Key / Base URL / 模型名称配置，一键测试连接 |
+| 🔍 搜索引擎 | 博查/Tavily/Brave/SearXNG 配置，每个附带详细说明 |
+| 🕷️ 爬虫 | 采集间隔配置 |
+| 👥 用户管理 | 用户列表、禁用/启用、重置密码 |
 
 ### 🔔 分时段自动推送（开发中）
 
@@ -64,7 +81,8 @@
 
 - PC/手机浏览器均可访问
 - Vue3 + Element Plus 现代 UI
-- 响应式布局，移动端友好
+- 响应式布局，移动端侧边栏抽屉
+- 刘海屏安全区域支持
 
 ---
 
@@ -77,6 +95,7 @@
 | 数据库 | PostgreSQL 15 |
 | 缓存 | Redis 7 |
 | 行情数据 | 腾讯财经 API + 东方财富 datacenter |
+| 全网搜索 | 博查 / Tavily / Brave / SearXNG |
 | AI 模型 | DeepSeek / 通义千问 / Claude / OpenAI |
 | 部署 | Docker Compose |
 | CI/CD | GitHub Actions → GitHub Container Registry |
@@ -139,34 +158,59 @@ docker compose -f docker-compose.build.yml ps
 | 用户名 | `admin` |
 | 密码 | `admin123` |
 
-> ⚠️ **首次登录后请立即修改密码！**
+> ⚠️ **首次登录后请立即修改密码！进入「系统管理」配置 AI 模型和搜索引擎。**
 
 ---
 
 ## ⚙️ 配置说明
 
-### 环境变量
+### 图形化配置（推荐）
 
-在项目根目录创建 `.env` 文件：
+登录后进入「系统管理」页面，分 4 个标签页配置：
+
+#### 🤖 AI 模型配置
+
+| 配置项 | 说明 | 示例 |
+|--------|------|------|
+| API Key | AI 模型密钥 | `sk-xxx` |
+| Base URL | API 请求地址 | `https://api.deepseek.com` |
+| 模型名称 | 使用的模型 | `deepseek-chat` |
+
+支持的 AI 服务商：
+
+| 服务商 | Base URL | 推荐模型 |
+|--------|----------|----------|
+| DeepSeek | `https://api.deepseek.com` | `deepseek-chat`（推荐） |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| OpenAI | `https://api.openai.com` | `gpt-4o-mini` |
+| Claude | `https://api.anthropic.com` | `claude-3-5-sonnet` |
+
+#### 🔍 搜索引擎配置
+
+用于全网资讯搜索，获取更丰富的新闻、研报、公告信息。
+
+| 引擎 | 用途 | 免费额度 | 官网 |
+|------|------|----------|------|
+| **博查** | 国内中文搜索，A股新闻/公告/研报 | 100次/天 | [bocha.cn](https://bocha.cn) |
+| **Tavily** | AI优化搜索，全球财经新闻 | 1000次/月 | [tavily.com](https://tavily.com) |
+| **Brave** | 隐私搜索引擎，英文财经 | 2000次/月 | [brave.com/search/api](https://brave.com/search/api/) |
+| **SearXNG** | 自建元搜索引擎，完全免费 | 无限制 | [docs.searxng.org](https://docs.searxng.org/) |
+
+搜索引擎按优先级自动切换：博查 → Tavily → Brave → SearXNG。
+
+### 环境变量配置
+
+也可通过 `.env` 文件配置（图形化配置优先级更高）：
 
 ```bash
 # JWT 密钥（务必修改！）
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=your-s…here
 
-# AI 模型配置（可选，用于 AI 解读功能）
-LLM_API_KEY=your-api-key
+# AI 模型
+LLM_API_KEY=***
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-chat
 ```
-
-### 支持的 AI 模型
-
-| 模型 | Base URL | 说明 |
-|------|----------|------|
-| DeepSeek | `https://api.deepseek.com` | 推荐，国内访问快 |
-| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 阿里云 |
-| Claude | `https://api.anthropic.com` | Anthropic |
-| OpenAI | `https://api.openai.com` | GPT 系列 |
 
 ---
 
@@ -183,13 +227,15 @@ stockai/
 │   │   │   ├── auth.py               # 认证（注册/登录/用户管理）
 │   │   │   ├── watchlist.py          # 自选股（搜索/添加/删除）
 │   │   │   ├── reports.py            # 研报（列表/详情/下载）
-│   │   │   ├── news.py               # 资讯（列表/详情）
+│   │   │   ├── news.py               # 资讯（列表/详情/全文抓取）
 │   │   │   ├── push.py               # 推送配置/记录
-│   │   │   └── dashboard.py          # 数据看板（个股/大盘/自选）
+│   │   │   ├── dashboard.py          # 数据看板（个股/大盘/自选）
+│   │   │   └── settings.py           # 系统设置（AI/搜索引擎/爬虫）
 │   │   └── services/                 # 业务逻辑
 │   │       ├── data_provider.py      # 行情数据（腾讯+东方财富）
 │   │       ├── stock_analyzer.py     # 技术分析引擎
 │   │       ├── stock_search.py       # 股票搜索（腾讯+新浪）
+│   │       ├── search_service.py     # 全网搜索（博查/Tavily/Brave/SearXNG）
 │   │       ├── llm_service.py        # 多 LLM 后端调用
 │   │       └── push_service.py       # 推送服务
 │   └── Dockerfile
@@ -203,14 +249,14 @@ stockai/
 │   ├── src/
 │   │   ├── views/
 │   │   │   ├── Login.vue             # 登录/注册
-│   │   │   ├── Layout.vue            # 布局框架
+│   │   │   ├── Layout.vue            # 响应式布局框架
 │   │   │   ├── MarketDashboard.vue   # 大盘复盘 + 自选股看板
 │   │   │   ├── StockDetail.vue       # 个股 AI 决策仪表盘
-│   │   │   ├── Reports.vue           # 研报中心
-│   │   │   ├── News.vue              # 市场资讯
+│   │   │   ├── Reports.vue           # 研报中心（含详情弹窗）
+│   │   │   ├── News.vue              # 市场资讯（含详情弹窗）
 │   │   │   ├── Watchlist.vue         # 自选股管理（搜索添加）
 │   │   │   ├── PushSettings.vue      # 推送设置
-│   │   │   └── Admin.vue             # 管理员后台
+│   │   │   └── Admin.vue             # 管理后台（4标签页）
 │   │   ├── router/                   # 路由
 │   │   ├── stores/                   # Pinia 状态管理
 │   │   └── composables/              # API 封装
@@ -236,6 +282,7 @@ stockai/
 | 龙虎榜 | 东方财富 datacenter | 机构买卖、上榜记录 |
 | 研报采集 | 东方财富研报频道 | 券商研报、行业报告 |
 | 资讯采集 | 东方财富资讯频道 | 财经新闻、公司公告 |
+| 全网搜索 | 博查/Tavily/Brave/SearXNG | 需配置 API Key |
 
 ---
 
@@ -293,7 +340,7 @@ cat backup_20260101.sql | docker exec -i stock-db psql -U stockai stockai
 # 1. 停止并删除容器、网络
 docker compose down
 
-# 2. 删除数据卷（⚠️ 此操作将删除所有数据，包括数据库、缓存、研报文件！）
+# 2. 删除数据卷（⚠️ 此操作将删除所有数据！）
 docker compose down -v
 
 # 3. 删除镜像
@@ -312,17 +359,6 @@ docker system prune -a
 
 ---
 
-## 📋 推送渠道配置
-
-| 渠道 | 配置方式 |
-|------|----------|
-| 飞书 | 创建自定义机器人，获取 Webhook Key |
-| 企业微信 | 创建群机器人，获取 Webhook Key |
-| Telegram | 通过 @BotFather 创建 Bot，格式：`BotToken:ChatID` |
-| 邮箱 | 需配置 SMTP 服务（开发中） |
-
----
-
 ## 🗺️ 开发路线
 
 ### ✅ 一期（已完成）
@@ -331,13 +367,16 @@ docker system prune -a
 - [x] 自选股管理（搜索/添加/删除）
 - [x] 实时行情数据（腾讯 API）
 - [x] 技术分析引擎（MA/MACD/RSI/量能/支撑压力）
-- [x] 个股 AI 决策仪表盘
+- [x] 个股 AI 决策仪表盘（12 个模块）
 - [x] 大盘复盘仪表盘
 - [x] 板块概念 / 同行业个股
 - [x] 北向资金 / 龙虎榜数据
 - [x] 舆情情报板块（利好/风险/动态）
-- [x] 研报 / 资讯采集与展示
+- [x] 研报 / 资讯采集与详情展示
+- [x] 多引擎全网搜索（博查/Tavily/Brave/SearXNG）
 - [x] 多 LLM 后端支持
+- [x] 图形化系统设置（AI/搜索引擎/爬虫/用户）
+- [x] 移动端自适应布局
 - [x] Docker Compose 部署
 - [x] GitHub Actions CI/CD
 
