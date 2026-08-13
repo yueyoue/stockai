@@ -1,7 +1,8 @@
 """
 自选股 API - 支持搜索添加
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+import json as json_lib
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from typing import List
@@ -35,7 +36,9 @@ async def search_stock(
 ):
     """搜索股票 - 输入代码/名称/拼音即可搜索"""
     results = await search_stocks(q, limit)
-    return {"results": results}
+    # ensure_ascii=False 让中文直接显示，不转义为 \uXXXX
+    content = json_lib.dumps({"results": results}, ensure_ascii=False)
+    return Response(content=content, media_type="application/json; charset=utf-8")
 
 
 @router.post("", response_model=WatchlistResponse)

@@ -3,11 +3,23 @@
 """
 import logging
 import httpx
+import json as json_lib
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
+
+
+def _decode_unicode(s: str) -> str:
+    """解码Unicode转义字符，如 \u8d35\u5dde -> 贵州"""
+    if not s or '\\u' not in s:
+        return s
+    try:
+        # json.loads 可以正确解码 Unicode 转义
+        return json_lib.loads(f'"{s}"')
+    except:
+        return s
 
 
 async def search_stocks(keyword: str, limit: int = 10) -> List[Dict[str, Any]]:
@@ -84,7 +96,7 @@ async def _tencent_search(keyword: str, limit: int) -> List[Dict[str, Any]]:
                 if market_prefix in ("sh", "sz"):
                     results.append({
                         "code": code,
-                        "name": name,
+                        "name": _decode_unicode(name),
                         "market": market,
                         "pinyin": pinyin,
                     })
