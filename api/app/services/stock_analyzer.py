@@ -113,6 +113,18 @@ class AnalysisResult:
     # 评分
     overall_score: int = 50
     sentiment_label: str = "中性"
+    
+    # 板块概念
+    sectors: List[str] = field(default_factory=list)
+    
+    # 同行业个股
+    peers: List[Dict[str, str]] = field(default_factory=list)
+    
+    # 龙虎榜
+    billboard: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # 北向资金
+    northbound: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class StockAnalyzer:
@@ -160,6 +172,40 @@ class StockAnalyzer:
         
         # 6. 操作检查清单
         result.checklist = self._generate_checklist(tech, quote)
+        
+        # 7. 板块概念
+        try:
+            sectors = self.dp.get_stock_sectors(stock_code)
+            result.sectors = [s.board_name for s in sectors[:8]]
+        except:
+            pass
+        
+        # 8. 同行业个股
+        try:
+            result.peers = self.dp.get_peer_stocks(stock_code, limit=8)
+        except:
+            pass
+        
+        # 9. 龙虎榜
+        try:
+            billboard = self.dp.get_billboard(stock_code, limit=3)
+            result.billboard = [
+                {"date": b.trade_date, "price": b.close_price, "change": b.change_rate,
+                 "explain": b.explain, "amt_ratio": b.deal_amount_ratio}
+                for b in billboard
+            ]
+        except:
+            pass
+        
+        # 10. 北向资金
+        try:
+            northbound = self.dp.get_northbound_flow(limit=3)
+            result.northbound = [
+                {"date": n.trade_date, "net": n.net_deal_amt, "buy": n.buy_amt, "sell": n.sell_amt}
+                for n in northbound
+            ]
+        except:
+            pass
         
         return result
     

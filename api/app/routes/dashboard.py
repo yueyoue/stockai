@@ -102,6 +102,10 @@ async def get_stock_dashboard(
             "target_2": result.target_2,
         },
         "checklist": result.checklist,
+        "sectors": result.sectors,
+        "peers": result.peers,
+        "billboard": result.billboard,
+        "northbound": result.northbound,
         "related_news": [
             {
                 "news_id": n.news_id,

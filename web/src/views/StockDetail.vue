@@ -147,6 +147,66 @@
     </el-card>
 
     <!-- 关联研报 -->
+    <!-- 板块概念 -->
+    <el-card class="mt-4" v-if="dashboard.sectors?.length">
+      <template #header><span class="font-semibold">🏷️ 所属板块概念</span></template>
+      <div class="flex flex-wrap gap-2">
+        <el-tag v-for="s in dashboard.sectors" :key="s" type="info">{{ s }}</el-tag>
+      </div>
+    </el-card>
+
+    <!-- 同行业个股 -->
+    <el-card class="mt-4" v-if="dashboard.peers?.length">
+      <template #header><span class="font-semibold">👥 同行业对标个股</span></template>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div v-for="p in dashboard.peers" :key="p.code"
+          class="p-2 border rounded cursor-pointer hover:bg-gray-50 text-center"
+          @click="$router.push({path: `/stock/${p.code}`, query: {name: p.name}})">
+          <div class="font-medium text-sm">{{ p.name }}</div>
+          <div class="text-xs text-gray-400">{{ p.code }}</div>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 北向资金 -->
+    <el-card class="mt-4" v-if="dashboard.northbound?.length">
+      <template #header><span class="font-semibold">💰 北向资金（近3日）</span></template>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-gray-500">
+            <th class="text-left py-1">日期</th>
+            <th class="text-right py-1">净买入(亿)</th>
+            <th class="text-right py-1">买入(亿)</th>
+            <th class="text-right py-1">卖出(亿)</th>
+          </tr></thead>
+          <tbody>
+            <tr v-for="n in dashboard.northbound" :key="n.date" class="border-t">
+              <td class="py-1">{{ n.date }}</td>
+              <td class="text-right" :class="n.net > 0 ? 'text-red-600' : 'text-green-600'">{{ n.net?.toFixed(2) }}</td>
+              <td class="text-right">{{ n.buy?.toFixed(2) }}</td>
+              <td class="text-right">{{ n.sell?.toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </el-card>
+
+    <!-- 龙虎榜 -->
+    <el-card class="mt-4" v-if="dashboard.billboard?.length">
+      <template #header><span class="font-semibold">🐉 龙虎榜数据</span></template>
+      <div v-for="b in dashboard.billboard" :key="b.date" class="py-3 border-b last:border-0">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium">{{ b.date }}</span>
+          <span class="text-sm" :class="b.change > 0 ? 'text-red-600' : 'text-green-600'">
+            {{ b.price?.toFixed(2) }} ({{ b.change > 0 ? '+' : '' }}{{ b.change?.toFixed(2) }}%)
+          </span>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">{{ b.explain }}</div>
+        <div class="text-xs text-gray-400">成交占比: {{ b.amt_ratio?.toFixed(2) }}%</div>
+      </div>
+    </el-card>
+
+    <!-- 关联研报 -->
     <el-card class="mt-4" v-if="dashboard.related_reports?.length">
       <template #header><span class="font-semibold">📄 关联研报</span></template>
       <div v-for="r in dashboard.related_reports" :key="r.report_id" class="py-2 border-b last:border-0">
