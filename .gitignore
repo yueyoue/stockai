@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+venv/
+.venv/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+db_data/
+redis_data/
+report_storage/
+
+# Logs
+*.log
+logs/
+
+# Node
+node_modules/
+web/dist/
+web/.vite/
+
+# Reference project (not part of our code)
+reference/
+
+# Temporary files
+*.tmp
+*.bak
+.openclaw/

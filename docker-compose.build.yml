@@ -1,0 +1,82 @@
+# StockAI - 本地构建版本
+# docker compose -f docker-compose.build.yml up -d --build
+
+services:
+  stock-web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "6688:80"
+    depends_on:
+      - stock-api
+    restart: always
+    container_name: stock-web
+
+  stock-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - report_storage:/app/report_storage
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://stockai:stockai123@stock-db:5432/stockai
+      - REDIS_URL=redis://stock-redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-stockai-default-secret-key-change-me}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - TZ=Asia/Shanghai
+    depends_on:
+      stock-db:
+        condition: service_healthy
+      stock-redis:
+        condition: service_started
+    restart: always
+    container_name: stock-api
+
+  stock-crawler:
+    build:
+      context: ./crawler
+      dockerfile: Dockerfile
+    volumes:
+      - report_storage:/app/report_storage
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://stockai:stockai123@stock-db:5432/stockai
+      - REDIS_URL=redis://stock-redis:6379/0
+      - TZ=Asia/Shanghai
+    depends_on:
+      stock-db:
+        condition: service_healthy
+      stock-redis:
+        condition: service_started
+    restart: always
+    container_name: stock-crawler
+
+  stock-redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: always
+    container_name: stock-redis
+
+  stock-db:
+    image: postgres:15-alpine
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: stockai
+      POSTGRES_USER: stockai
+      POSTGRES_PASSWORD: stockai123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockai -d stockai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    container_name: stock-db
+
+volumes:
+  db_data:
+  redis_data:
+  report_storage:
