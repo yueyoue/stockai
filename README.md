@@ -1,30 +1,83 @@
 # 📈 StockAI - 智能股票资讯研报分析平台
 
-> 私有化部署的 Web 股票资讯工具，全天候自动采集卖方券商研报、市场行情资讯、上市公司公告。支持多用户隔离管理，针对用户自选股自动生成 AI 解读，并分时段推送标准化决策内容。
+> 私有化部署的 A 股智能投研工具。全天候自动采集研报、资讯、公告，支持多用户隔离，针对自选股自动生成 AI 决策仪表盘，分时段推送标准化决策内容。
 
-**⚠️ 免责声明：所有 AI 解读仅客观拆解信息，不构成任何投资建议。**
+**⚠️ 免责声明：所有 AI 解读仅客观拆解信息，不构成任何投资建议。股市有风险，投资需谨慎。**
 
 ---
 
 ## ✨ 功能特性
 
-- 📊 全网卖方研报采集，支持分类筛选、标题检索
-- 📰 重点行情资讯、上市公司公告采集
-- 👥 多用户系统，管理员可控制注册开关
-- ⭐ 用户自选股模块，个股关联研报、公告、资讯
-- 🤖 AI 解读：研报分析、资讯影响评估（利好/中性/利空）
-- 🔔 分时段自动推送：开盘前、盘中、午盘、盘后
-- 📱 自适应 Web 前端，PC/手机浏览器均可访问
-- 🔐 JWT 鉴权，数据多用户隔离
+### 📊 个股 AI 决策仪表盘
+
+| 模块 | 功能 |
+|------|------|
+| 头部标识区 | 综合评分 0-100、操作信号（买入/观望/卖出）、核心结论 |
+| 技术面分析 | MA5/10/20 均线、乖离率、量能、MACD、RSI、支撑压力位 |
+| 仓位建议 | 持仓者/空仓者分别操作指引 |
+| 交易狙击方案 | 理想买入区间、二次加仓、止损价、目标位 |
+| 操作检查清单 | ✅/⚠️/❌ 自动校验全部前置条件 |
+| 🏷️ 板块概念 | 所属行业板块、概念题材 |
+| 👥 同行业对标 | 同板块关联个股，点击跳转分析 |
+| 💰 北向资金 | 近 3 日净买入/卖出金额 |
+| 🐉 龙虎榜 | 上榜记录、机构买卖方向、成交占比 |
+| 📰 舆情情报 | 利好催化清单、风险警报清单、最新动态汇总 |
+| 📄 关联研报 | 近期券商研报摘要 |
+| 🤖 AI 完整报告 | Markdown 格式深度分析，一键复制 |
+
+### 📈 大盘复盘仪表盘
+
+| 模块 | 功能 |
+|------|------|
+| 主要指数 | 上证/深证/创业板/沪深 300 实时点位、涨跌幅 |
+| 市场统计 | 涨跌家数、涨停/跌停数量 |
+| 自选股看板 | 全部自选股评分/信号/涨跌汇总，点击进入个股分析 |
+
+### 🔍 智能搜索添加自选股
+
+- 支持**股票代码**搜索（如 `600519`）
+- 支持**股票名称**搜索（如 `茅台`）
+- 支持**拼音首字母**搜索（如 `GZMT`）
+- 下拉列表实时匹配，点击直接添加
+
+### 📰 数据采集
+
+- 全网卖方研报采集，支持分类筛选、标题检索
+- 重点行情资讯、上市公司公告采集
+- 自动关联个股、打分类标签
+- 增量采集，定时轮询
+
+### 👥 多用户系统
+
+- 注册/登录、密码修改
+- 管理员可控制注册开关、禁用/启用用户
+- 数据完全隔离，用户仅可见自己的数据
+
+### 🔔 分时段自动推送（开发中）
+
+- 08:30 开盘前决策看板
+- 09:30-11:30 / 13:00-15:00 盘中增量推送
+- 11:40 午盘简评
+- 15:30 盘后总结
+
+### 📱 自适应 Web 前端
+
+- PC/手机浏览器均可访问
+- Vue3 + Element Plus 现代 UI
+- 响应式布局，移动端友好
+
+---
 
 ## 🛠️ 技术栈
 
 | 组件 | 技术 |
 |------|------|
-| 后端 | Python 3.11 + FastAPI + SQLAlchemy |
-| 前端 | Vue3 + Element Plus + Tailwind CSS |
+| 后端 | Python 3.11 + FastAPI + SQLAlchemy + APScheduler |
+| 前端 | Vue3 + Element Plus + Tailwind CSS + Vite |
 | 数据库 | PostgreSQL 15 |
 | 缓存 | Redis 7 |
+| 行情数据 | 腾讯财经 API + 东方财富 datacenter |
+| AI 模型 | DeepSeek / 通义千问 / Claude / OpenAI |
 | 部署 | Docker Compose |
 | CI/CD | GitHub Actions → GitHub Container Registry |
 
@@ -108,11 +161,12 @@ LLM_MODEL=deepseek-chat
 
 ### 支持的 AI 模型
 
-- DeepSeek（推荐，国内访问快）
-- 通义千问
-- Claude
-- OpenAI
-- 其他兼容 OpenAI 格式的模型
+| 模型 | Base URL | 说明 |
+|------|----------|------|
+| DeepSeek | `https://api.deepseek.com` | 推荐，国内访问快 |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 阿里云 |
+| Claude | `https://api.anthropic.com` | Anthropic |
+| OpenAI | `https://api.openai.com` | GPT 系列 |
 
 ---
 
@@ -120,25 +174,68 @@ LLM_MODEL=deepseek-chat
 
 ```
 stockai/
-├── api/                          # FastAPI 后端
+├── api/                              # FastAPI 后端
 │   ├── app/
-│   │   ├── core/                 # 配置、数据库、安全
-│   │   ├── models/               # 数据模型
-│   │   ├── schemas/              # 数据验证
-│   │   ├── routes/               # API 路由
-│   │   └── services/             # 业务逻辑
+│   │   ├── core/                     # 配置、数据库、安全（JWT）
+│   │   ├── models/                   # SQLAlchemy 数据模型
+│   │   ├── schemas/                  # Pydantic 数据验证
+│   │   ├── routes/                   # API 路由
+│   │   │   ├── auth.py               # 认证（注册/登录/用户管理）
+│   │   │   ├── watchlist.py          # 自选股（搜索/添加/删除）
+│   │   │   ├── reports.py            # 研报（列表/详情/下载）
+│   │   │   ├── news.py               # 资讯（列表/详情）
+│   │   │   ├── push.py               # 推送配置/记录
+│   │   │   └── dashboard.py          # 数据看板（个股/大盘/自选）
+│   │   └── services/                 # 业务逻辑
+│   │       ├── data_provider.py      # 行情数据（腾讯+东方财富）
+│   │       ├── stock_analyzer.py     # 技术分析引擎
+│   │       ├── stock_search.py       # 股票搜索（腾讯+新浪）
+│   │       ├── llm_service.py        # 多 LLM 后端调用
+│   │       └── push_service.py       # 推送服务
 │   └── Dockerfile
-├── crawler/                      # 数据采集服务
-│   ├── sources/                  # 数据源采集器
+├── crawler/                          # 数据采集服务
+│   ├── sources/
+│   │   ├── eastmoney.py              # 东方财富研报采集
+│   │   └── news_crawler.py           # 资讯采集
+│   ├── main.py                       # 采集调度
 │   └── Dockerfile
-├── web/                          # Vue3 前端
+├── web/                              # Vue3 前端
 │   ├── src/
+│   │   ├── views/
+│   │   │   ├── Login.vue             # 登录/注册
+│   │   │   ├── Layout.vue            # 布局框架
+│   │   │   ├── MarketDashboard.vue   # 大盘复盘 + 自选股看板
+│   │   │   ├── StockDetail.vue       # 个股 AI 决策仪表盘
+│   │   │   ├── Reports.vue           # 研报中心
+│   │   │   ├── News.vue              # 市场资讯
+│   │   │   ├── Watchlist.vue         # 自选股管理（搜索添加）
+│   │   │   ├── PushSettings.vue      # 推送设置
+│   │   │   └── Admin.vue             # 管理员后台
+│   │   ├── router/                   # 路由
+│   │   ├── stores/                   # Pinia 状态管理
+│   │   └── composables/              # API 封装
 │   └── Dockerfile
-├── .github/workflows/            # GitHub Actions CI/CD
-├── docker-compose.yml            # 预编译镜像部署
-├── docker-compose.build.yml      # 本地构建部署
+├── .github/workflows/                # GitHub Actions CI/CD
+├── docker-compose.yml                # 预编译镜像部署
+├── docker-compose.build.yml          # 本地构建部署
 └── README.md
 ```
+
+---
+
+## 📡 数据源说明
+
+| 数据 | 来源 | 备注 |
+|------|------|------|
+| 实时行情 | 腾讯财经 `qt.gtimg.cn` | A 股全量实时报价 |
+| K 线数据 | 腾讯财经 `web.ifzq.gtimg.cn` | 日 K 线，前复权 |
+| 大盘指数 | 腾讯财经 | 上证/深证/创业板/沪深 300 |
+| 股票搜索 | 腾讯 + 新浪 | 代码/名称/拼音搜索 |
+| 板块概念 | 东方财富 datacenter | 行业板块、概念题材 |
+| 北向资金 | 东方财富 datacenter | 沪深港通资金流向 |
+| 龙虎榜 | 东方财富 datacenter | 机构买卖、上榜记录 |
+| 研报采集 | 东方财富研报频道 | 券商研报、行业报告 |
+| 资讯采集 | 东方财富资讯频道 | 财经新闻、公司公告 |
 
 ---
 
@@ -226,6 +323,35 @@ docker system prune -a
 
 ---
 
+## 🗺️ 开发路线
+
+### ✅ 一期（已完成）
+
+- [x] 多用户系统（注册/登录/角色/数据隔离）
+- [x] 自选股管理（搜索/添加/删除）
+- [x] 实时行情数据（腾讯 API）
+- [x] 技术分析引擎（MA/MACD/RSI/量能/支撑压力）
+- [x] 个股 AI 决策仪表盘
+- [x] 大盘复盘仪表盘
+- [x] 板块概念 / 同行业个股
+- [x] 北向资金 / 龙虎榜数据
+- [x] 舆情情报板块（利好/风险/动态）
+- [x] 研报 / 资讯采集与展示
+- [x] 多 LLM 后端支持
+- [x] Docker Compose 部署
+- [x] GitHub Actions CI/CD
+
+### 🔜 二期（规划中）
+
+- [ ] 分时段自动推送（开盘前/盘中/午盘/盘后）
+- [ ] 研报 PDF 下载与解析
+- [ ] 策略问股（Agent 多轮对话）
+- [ ] 回测功能
+- [ ] Flutter 移动端 APP
+- [ ] 深色主题
+
+---
+
 ## 📄 License
 
 MIT License
@@ -238,3 +364,5 @@ MIT License
 - [FastAPI](https://fastapi.tiangolo.com/) - 后端框架
 - [Vue3](https://vuejs.org/) - 前端框架
 - [Element Plus](https://element-plus.org/) - UI 组件库
+- [腾讯财经](https://stockapp.finance.qq.com/) - 行情数据 API
+- [东方财富](https://www.eastmoney.com/) - 板块/资金/龙虎榜数据
